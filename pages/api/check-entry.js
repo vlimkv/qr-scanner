@@ -6,28 +6,43 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Метод не поддерживается' });
+  }
 
   const { token } = req.body;
 
-  const { data, error } = await supabase
-    .from('participants')
-    .select('id, name, entered')
-    .eq('qr_token', token)
-    .single();
-
-  if (error || !data) {
-    return res.status(404).json({ message: '❌ Участник не найден' });
+  if (!token) {
+    return res.status(400).json({ message: '❌ Токен отсутствует' });
   }
 
-  if (data.entered) {
-    return res.json({ message: `⚠️ Уже зашёл: ${data.name}` });
+  try {
+    const { data, error } = await supabase
+      .from('participants')
+      .select('id, name, entered')
+      .eq('qr_token', token)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({ message: '❌ Участник не найден' });
+    }
+
+    if (data.entered) {
+      return res.status(200).json({ message: `⚠️ Уже заходил: ${data.name}` });
+    }
+
+    const { error: updateError } = await supabase
+      .from('participants')
+      .update({ entered: true })
+      .eq('id', data.id);
+
+    if (updateError) {
+      return res.status(500).json({ message: '🚫 Ошибка при обновлении' });
+    }
+
+    return res.status(200).json({ message: `✅ Вход разрешён: ${data.name}` });
+  } catch (err) {
+    console.error('❌ Internal error:', err);
+    return res.status(500).json({ message: '🚫 Внутренняя ошибка сервера' });
   }
-
-  await supabase
-    .from('participants')
-    .update({ entered: true })
-    .eq('id', data.id);
-
-  return res.json({ message: `✅ Вход разрешён: ${data.name}` });
 }
