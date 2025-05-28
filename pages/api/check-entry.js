@@ -28,7 +28,10 @@ export default async function handler(req, res) {
     }
 
     if (data.entered) {
-      return res.status(200).json({ message: `⚠️ Уже заходил: ${data.name}` });
+      return res.status(200).json({
+        message: `⚠️ Уже заходил: ${data.name}`,
+        name: data.name // 👈 ЭТО ТОЖЕ ДОБАВЬ!
+      });
     }
 
     const { error: updateError } = await supabase
@@ -40,7 +43,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: '🚫 Ошибка при обновлении' });
     }
 
-    return res.status(200).json({ message: `✅ Вход разрешён: ${data.name}` });
+    return res.status(200).json({
+      message: `✅ Вход разрешён: ${data.name}`,
+      name: data.name // 👈 ЭТО ДОБАВЬ!
+    });
   } catch (err) {
     console.error('❌ Internal error:', err);
     return res.status(500).json({ message: '🚫 Внутренняя ошибка сервера' });
