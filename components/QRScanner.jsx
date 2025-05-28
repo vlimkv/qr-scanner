@@ -28,47 +28,46 @@ export default function QRScanner() {
 
           const data = await response.json();
           setStatusMessage(data.message);
-          if (data.message.includes('✅')) {
-            setStatusColor('text-green-500');
-          } else if (data.message.includes('⚠️')) {
-            setStatusColor('text-yellow-500');
-          } else {
-            setStatusColor('text-red-500');
-          }
+          setStatusColor(
+            data.message.includes('✅') ? 'text-green-500' :
+            data.message.includes('⚠️') ? 'text-yellow-500' :
+            'text-red-500'
+          );
 
-          // Добавляем в историю
           setEntries(prev => [
             { name: data.name || 'неизвестно', time: new Date().toLocaleTimeString() },
             ...prev.slice(0, 4)
           ]);
-        } catch (e) {
+        } catch {
           setStatusMessage('Ошибка соединения.');
           setStatusColor('text-red-500');
         }
 
-        // Повторный запуск через 2 сек
+        // Автоперезапуск сканера
         setTimeout(() => {
           setResult('');
           setStatusMessage('');
           setStatusColor('');
           startScanner();
         }, 2000);
-      }
-      if (err && !(err.name === 'NotFoundException')) {
-        setStatusMessage(`Ошибка: ${err.message}`);
-        setStatusColor('text-red-500');
+      } else if (err && err.name !== 'NotFoundException') {
+        console.warn('Сканер: ошибка чтения:', err.message);
       }
     };
 
+
     const startScanner = () => {
-      codeReader.decodeFromConstraints(
-        { video: { facingMode: 'environment' } },
-        videoRef.current,
-        onResult
-      ).catch(err => {
+      try {
+        codeReader.decodeFromConstraints(
+          { video: { facingMode: 'environment' } },
+          videoRef.current,
+          onResult
+        );
+      } catch (err) {
+        console.warn('Ошибка запуска камеры:', err.message);
         setStatusMessage(`Ошибка камеры: ${err.message}`);
         setStatusColor('text-red-500');
-      });
+      }
     };
 
     // 🔐 PIN-проверка
