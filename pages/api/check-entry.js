@@ -21,6 +21,7 @@ export default async function handler(req, res) {
       .from('participants')
       .select('id, name, entered')
       .eq('qr_token', token)
+      .limit(1)
       .single();
 
     if (error || !data) {
